@@ -1,0 +1,18 @@
+[
+  {
+    "upstream_repo": "Lightning-AI/litData",
+    "head_sha": "1ea670ad5f55a0b69fc05b2d04545647922c3c37",
+    "file": "src/litdata/streaming/serializers.py",
+    "function": "NumpySerializer.deserialize",
+    "native_test_cmd": "python3 -m pytest tests/streaming/test_serializer.py tests/streaming/test_item_loader.py",
+    "bench_cmd": "python3 osspr-intake/harness/numpy_deserialize.py",
+    "baseline_median_ms": 74.0573,
+    "baseline_noise_pct": 3.252,
+    "tests_pass_on_baseline": true,
+    "tests_summary": "94 passed (CPU-only torch 2.15.0+cpu, requirements/test.txt + extras.txt)",
+    "workload": "Decode 20,000 uint8 (32, 32, 3) arrays serialized by NumpySerializer, one pass per timed call.",
+    "why_hot": "Chunk-read decode path: StreamingDataset calls NumpySerializer.deserialize for each multi-dimensional numpy leaf. Measured share of a full 20,000-sample StreamingDataset epoch: 47.2% (74.1 ms of 156.8 ms, median of 9, one pinned core). The header is parsed with 2 + ndim np.frombuffer(...).item() calls and `tensor.shape == shape` compares a tuple with a list, so the reshape always runs.",
+    "overlap_check": "2026-11-17 08:15 GMT: no open PRs touch serializers.py; no dexhunter PRs on Lightning-AI/litData; no issue matches NumpySerializer deserialize.",
+    "notes": "Feasibility only, not a claim: a struct.unpack_from header + np.frombuffer(offset=...) variant returned equal arrays and took about 33 ms against 73 ms on this workload. Output must stay a writeable copy with the same dtype and shape. PILOT STOP RULE (Dex 2026-11-17 08:05 GMT, GPU-task pilot track A): drop this card as NO_GO if the harness baseline-vs-baseline spread (IQR/median) is above 3.5% after 9 pairs, or if the target is under 5% of the end-to-end step named in the harness docstring. All normal gates apply unchanged (500-star floor, EXCLUDED_REPOS, full noise band, 3.5% minimum gain, final review, L92 complexity penalty)."
+  }
+]
